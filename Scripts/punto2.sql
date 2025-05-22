@@ -1,4 +1,5 @@
 USE ecommerce;
+
 --<============================ Trigger 1 ============================> -- 
 
 -- #### Creacion de tabla concentrado_ventas
@@ -15,36 +16,35 @@ CREATE TABLE concentrado_ventas(
   FOREIGN KEY (id_tienda) REFERENCES tienda(tienda_id)
 );
 
--- prueba de consulta
-SELECT t.tienda_id, p.fecha_pedido, 
-	SUM(dp.cantidad * dp.precio_unitario * (1-dp.descuento_aplicado/100)) as venta_total,
-  p.estatus , p.metodo_pago,
-  AVG(dp.descuento_aplicado) promedio_descuento,
-  COUNT(DISTINCT p.pedido_id) AS transaciones_totales
-FROM pedido as p
-	join detalle_pedido as dp on (p.pedido_id = dp.pedido_id)
-  join envio as e on (p.pedido_id = e.pedido_id)
-  join tienda as t on (e.tienda_id = t.tienda_id)
-  group by p.fecha_pedido, t.tienda_id
-  order by t.tienda_id;
-
-
 -- #### CREACION DEL TRIGGER 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS total_ventas_diario$$
 CREATE PROCEDURE total_ventas_diario()
 BEGIN
-    
+  TRUNCATE TABLE concentrado_ventas;
+	INSERT INTO concentrado_ventas(id_tienda,fecha_transaccion, total_venta, estatus_pedido, metodo_pago, avg_descuento, total_transacciones)
+	SELECT t.tienda_id, p.fecha_pedido, 
+  	SUM(dp.cantidad * dp.precio_unitario * (1-dp.descuento_aplicado/100)) as venta_total,
+    p.estatus , p.metodo_pago,
+    AVG(dp.descuento_aplicado) promedio_descuento,
+    COUNT(DISTINCT p.pedido_id) AS transaciones_totales
+  FROM pedido as p
+  JOIN detalle_pedido AS dp ON (p.pedido_id = dp.pedido_id)
+  JOIN envio AS e ON (p.pedido_id = e.pedido_id)
+  JOIN tienda AS t ON (e.tienda_id = t.tienda_id) 
+  GROUP BY t.tienda_id, p.fecha_pedido DESC;
+	SELECT * FROM concentrado_ventas;  
 END$$
 DELIMITER ;
 
 CALL total_ventas_diario();
 
 
-
 --<============================ Trigger 2 ============================> -- 
 
--- Se utilizo la exprecion "dp.cantidad * dp.precio_unitario * (1-dp.descuento_aplicado/100)" para el consumo para considerar toda la informacion disponible dentro de la misma base de datos y tener datos mas exactos
+-- Se utilizo la exprecion "dp.cantidad * dp.precio_unitario * (1-dp.descuento_aplicado/100)" para el consumo para considerar toda la informacion
+-- disponibl y asi tener datos mas exactos.
+-- Se usa como argumento de entrada ncliente para encontrar los datos correspondientes y se utiliza "tienda_id" para agrupar los datos por tienda.
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS consumo_cliente_tiendas$$
@@ -64,6 +64,4 @@ END$$
 DELIMITER ;
 
 -- se tiene que ingresar el id del cliente como argumento del procedimiento almacenado
-CALL consumo_cliente_tiendas();
-
-
+CALL consumo_cliente_tiendas(1);
