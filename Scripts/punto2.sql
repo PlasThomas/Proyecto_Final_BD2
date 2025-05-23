@@ -1,6 +1,6 @@
 USE ecommerce;
 
---<============================ Trigger 1 ============================> -- 
+-- <============================ Trigger 1 ============================> -- 
 
 -- #### Creacion de tabla concentrado_ventas
 DROP TABLE IF EXISTS concentrado_ventas;
@@ -22,6 +22,31 @@ DROP PROCEDURE IF EXISTS total_ventas_diario$$
 CREATE PROCEDURE total_ventas_diario()
 BEGIN
   TRUNCATE TABLE concentrado_ventas;
+  INSERT INTO concentrado_ventas(
+    id_tienda, fecha_transaccion, total_venta, estatus_pedido, metodo_pago, avg_descuento, total_transacciones)
+  SELECT 
+    t.tienda_id,
+    DATE(p.fecha_pedido),
+    SUM(dp.cantidad * dp.precio_unitario * (1 - dp.descuento_aplicado / 100)) AS venta_total,
+    p.estatus,
+    p.metodo_pago,
+    AVG(dp.descuento_aplicado) AS promedio_descuento,
+    COUNT(DISTINCT p.pedido_id) AS transacciones_totales
+  FROM pedido AS p
+  JOIN detalle_pedido AS dp ON p.pedido_id = dp.pedido_id
+  JOIN envio AS e ON p.pedido_id = e.pedido_id
+  JOIN tienda AS t ON e.tienda_id = t.tienda_id
+  GROUP BY t.tienda_id, DATE(p.fecha_pedido), p.estatus, p.metodo_pago;
+END$$
+DELIMITER ;
+
+
+-- para utilizarse con mariaDB
+DELIMITER $$
+DROP PROCEDURE IF EXISTS total_ventas_diario$$
+CREATE PROCEDURE total_ventas_diario()
+BEGIN
+  TRUNCATE TABLE concentrado_ventas;
 	INSERT INTO concentrado_ventas(id_tienda,fecha_transaccion, total_venta, estatus_pedido, metodo_pago, avg_descuento, total_transacciones)
 	SELECT t.tienda_id, p.fecha_pedido, 
   	SUM(dp.cantidad * dp.precio_unitario * (1-dp.descuento_aplicado/100)) as venta_total,
@@ -37,7 +62,11 @@ BEGIN
 END$$
 DELIMITER ;
 
+
+
 CALL total_ventas_diario();
+SELECT * FROM concentrado_ventas;
+
 
 
 --<============================ Trigger 2 ============================> -- 
