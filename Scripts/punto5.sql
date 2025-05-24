@@ -3,6 +3,7 @@ use ecommerce;
 
 -- 1. Desarrollar una vista que muestre el detalle completo del concentrado de ventas,
 -- incluyendo datos de promociones aplicadas.
+drop view if exists detalle_ventas;
 CREATE OR REPLACE VIEW detalle_ventas AS
 SELECT a.*, cv.promo_id ,cv.nombre, cv.porcentaje_descuento, DATEDIFF(cv.fecha_fin, cv.fecha_inicio) AS duracion_dias_promo
 from concentrado_ventas AS a
@@ -17,7 +18,7 @@ SELECT * FROM detalle_ventas;
 
 -- 2. Crear una vista que muestre el concentrado de ventas filtrado por tipo de tienda y
 -- rango de fechas.
-
+drop view if exists concentrado_por_tienda_y_fecha;
 create or replace view concentrado_por_tienda_y_fecha as
 select 
     t.tipo_tienda,
@@ -37,10 +38,6 @@ group by t.tipo_tienda, t.nombre, date(e.fecha_envio);
 
 
 
-
-drop view if exists ventas;
-
-drop view if exists concentrado_por_tienda_y_fecha;
 
 
 

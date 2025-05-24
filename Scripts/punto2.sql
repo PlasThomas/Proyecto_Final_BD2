@@ -17,6 +17,7 @@ CREATE TABLE concentrado_ventas(
 );
 
 -- #### CREACION DEL TRIGGER 
+-- para usarse con mysql
 DELIMITER $$
 DROP PROCEDURE IF EXISTS total_ventas_diario$$
 CREATE PROCEDURE total_ventas_diario()
