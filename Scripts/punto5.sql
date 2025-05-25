@@ -18,23 +18,16 @@ SELECT * FROM detalle_ventas;
 
 -- 2. Crear una vista que muestre el concentrado de ventas filtrado por tipo de tienda y
 -- rango de fechas.
-drop view if exists concentrado_por_tienda_y_fecha;
-create or replace view concentrado_por_tienda_y_fecha as
-select 
-    t.tipo_tienda,
-    t.nombre as nombre_tienda,
-    date(e.fecha_envio) as fecha_envio,
-    count(distinct p.pedido_id) as total_transacciones,
-    sum(dp.precio_unitario * dp.cantidad) as total_venta,
-    avg(dp.descuento_aplicado) as promedio_descuento,
-    group_concat(distinct p.metodo_pago) as metodos_pago,
-    group_concat(distinct p.estatus) as estatuses
-from pedido p
-join detalle_pedido dp on p.pedido_id = dp.pedido_id
-join envio e on p.pedido_id = e.pedido_id
-join tienda t on e.tienda_id = t.tienda_id
-where e.fecha_envio is not null
-group by t.tipo_tienda, t.nombre, date(e.fecha_envio);
+drop view if exists detalle_tienda_fechas;
+CREATE OR REPLACE VIEW detalle_tienda_fechas AS
+SELECT a.id_concentrado_ventas, a.id_tienda, t.nombre AS tienda_nombre, t.tipo_tienda,
+a.total_venta, a.estatus_pedido, a.metodo_pago, a.avg_descuento, a.total_transacciones, a.fecha_transaccion
+from concentrado_ventas AS a
+JOIN tienda t ON (a.id_tienda = t.tienda_id)
+WHERE a.fecha_transaccion BETWEEN '2024-01-01' AND '2025-06-01'
+GROUP BY t.tipo_tienda;
+
+SELECT * FROM detalle_tienda_fechas;
 
 
 
